@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 //define schema
 var apodSchema = new mongoose.Schema({
   title: String,
+  copyright : String,
   date: {
       type : Date,
   },

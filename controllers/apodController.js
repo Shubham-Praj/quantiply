@@ -1,49 +1,33 @@
 import apodModel from "../models/apodModel.js";
-import fetch from "node-fetch";
+import imageDownloader from "../services/imageDownloader.js";
+import fetchApodData from "../services/getDatafromAPI.js";
 
 const apodControllerTest = {};
-var apiAPODData;
 
 apodControllerTest.getApodData = async (req, res) => {
-  const rest = await fetch(
-    `${process.env.BASE_URL}date=${req.body.date}&&api_key=${process.env.API_KEY}`
-  );
-  const data = await rest.json();
-
-  // fetch(
-  //   `${process.env.BASE_URL}date=${req.body.date}&&api_key=${process.env.API_KEY}`
-  // )
-  //   .then((res) => {
-  //     return res.json();
-  //   })
-  //   .then((data) => {
-  //    console.log(data);
-  //   })
-  //   .catch((error) => {
-  //     console.error(error);
-  //   });
-
-
-
   try {
-    //Condition to check if data is present in DB
+    //Check if data is present in DB
+    let data = await apodModel.find({ date: { $eq: req.body.date } }).exec();
 
+    //If not then hit the api and download the image in images folder
+    if (data.length == 0) {
+      data = await fetchApodData(req.body.date);
 
-    //if data not present add data to db and load send
-    // const apod1 = new apodModel({
-    //   title: data.title,
-    //   date: data.date,
-    //   explanation: data.explanation,
-    //   media_type: data.media_type,
-    //   image_url: data.url,
-    // });
-  
-    // apodModel.insertMany([apod1]);
-
+      const freshData = new apodModel({
+        title: data.title,
+        copyright : data.copyright,
+        date: data.date,
+        explanation: data.explanation,
+        media_type: data.media_type,
+        image_url: data.url === "" ? data.hdurl : data.url,
+      });
+      apodModel.insertMany([freshData]);
+      imageDownloader(data.url, req.body.date);
+    }
 
     return res.status(200).json({
       status: 200,
-      data: apod,
+      data: data,
       message: "Succesfully APOD Retrieved",
     });
   } catch (error) {

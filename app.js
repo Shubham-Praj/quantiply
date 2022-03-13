@@ -7,7 +7,7 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
-//Home Page Route
+//Home Page Test Route
 app.get("/", (req, res) => {
   res.send("Homg Page");
 });
