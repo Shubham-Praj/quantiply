@@ -7,22 +7,26 @@ const apodControllerTest = {};
 apodControllerTest.getApodData = async (req, res) => {
   try {
     //Check if data is present in DB
-    let data = await apodModel.find({ date: { $eq: req.body.date } }).exec();
+    let data = await apodModel.findOne({ date: { $eq: req.body.date } }).exec();
 
     //If not then hit the api and download the image in images folder
-    if (data.length == 0) {
+    if (data == null) {
       data = await fetchApodData(req.body.date);
 
       const freshData = new apodModel({
         title: data.title,
-        copyright : data.copyright,
-        date: data.date,
+        copyright: data.copyright,
+        date: data.date.toString(),
         explanation: data.explanation,
         media_type: data.media_type,
-        image_url: data.url === "" ? data.hdurl : data.url,
+        image_url: data.hdurl || data.url,
       });
-      apodModel.insertMany([freshData]);
-      imageDownloader(data.url, req.body.date);
+
+      await apodModel.insertMany([freshData]);
+
+      if (data.media_type === "image") {
+        imageDownloader(data.url, req.body.date);
+      }
     }
 
     return res.status(200).json({
